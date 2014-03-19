@@ -1,0 +1,2 @@
+FAB-Provided-Dependency: org.apache.* org.springframework* javax*
+FAB-Exclude-Dependency: org.apache.activemq:activeio-core

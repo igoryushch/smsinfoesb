@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:jaxws="http://cxf.apache.org/jaxws"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		                   http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd">
+
+    <context:property-placeholder location="classpath:META-INF/dev.smsinfoservice.properties"/>
+
+    <bean id="smsServiceUtils" class="ua.np.services.smsinfo.SmsServiceUtils"/>
+
+    <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName">
+            <value>${dataSource.driverClassName}</value>
+        </property>
+        <property name="url">
+            <value>${dataSource.url}</value>
+        </property>
+        <property name="username">
+            <value>${dataSource.username}</value>
+        </property>
+        <property name="password">
+            <value>${dataSource.password}</value>
+        </property>
+    </bean>
+
+    <bean id="smsServiceDao" class="ua.np.services.smsinfo.JdbcSmsServiceDaoImpl">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+    <bean id="smsInfoService" class="ua.np.services.smsinfo.SmsInfoServiceImpl">
+        <property name="smsServiceDao" ref="smsServiceDao"/>
+        <property name="smsServiceUtils" ref="smsServiceUtils"/>
+    </bean>
+    <jaxws:endpoint id="smsServiceEndpoint" implementor="#smsInfoService"
+                    address="camel://direct:SmsEndpoint" />
+
+</beans>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Configures the Camel Context -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camel="http://camel.apache.org/schema/spring"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+       ">
+
+
+    <import resource="jms-setup.xml"/>
+    <import resource="applicationContext.xml"/>
+
+	<bean class="org.apache.camel.component.cxf.transport.CamelTransportFactory"
+		lazy-init="false">
+		<property name="camelContext" ref="dest_context" />
+		<property name="transportIds">
+			<list>
+				<value>http://cxf.apache.org/transports/camel</value>
+			</list>
+		</property>
+	</bean>
+
+	<camelContext id="dest_context" xmlns="http://camel.apache.org/schema/spring">
+		<propertyPlaceholder id="properties"
+			location="classpath:META-INF/dev.smsinfoservice.properties" xmlns="http://camel.apache.org/schema/spring" />
+		<route>
+			<from uri="jetty:http://localhost:9009/smsInfo" />
+			<to uri="direct:SmsEndpoint" />
+		</route>
+
+		<route>
+            <from uri="jms:incomingOrders"/>
+			<split>
+				<tokenize token="smsRequest" xml="true"></tokenize>
+				<choice>
+					<when>
+						<xpath>/smsRequest/operator/name = 'Life'</xpath>
+						<aggregate strategyRef="aggregatorStrategy"
+							completionSize="5" completionTimeout="3000">
+							<correlationExpression>
+								<constant>true</constant>
+							</correlationExpression>
+							<setBody>
+								<simple>&lt;smsRequestListWrapper&gt;${body}&lt;/smsRequestListWrapper&gt;</simple>
+							</setBody>
+							<to uri="xslt:convertLife.xsl" />
+							<log message="[life]    Processing ${body}" />
+							<setExchangePattern pattern="InOut" />
+							<to uri="{{life.newHost}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;authMethod=Basic&amp;authUsername={{life.newHostUser}}&amp;authPassword={{life.newHostPassword}}&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}" />
+							<log message="[life]    Response ${body}" />
+						</aggregate>
+					</when>
+					<otherwise>
+						<aggregate strategyRef="aggregatorStrategy"
+							completionSize="5" completionTimeout="3000">
+							<correlationExpression>
+								<constant>true</constant>
+							</correlationExpression>
+							<setBody>
+								<simple>&lt;smsRequestListWrapper&gt;${body}&lt;/smsRequestListWrapper&gt;</simple>
+							</setBody>
+							<to uri="xslt:convertKyivstar.xsl" />
+							<log message="[kyivstar]    Processing ${body}" />
+							<setExchangePattern pattern="InOut" />
+							<to uri="{{kyivstar.host}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}" />
+							<log message="[kyivstar]    Response ${body}" />
+						</aggregate>
+					</otherwise>
+				</choice>
+			</split>
+		</route>
+	</camelContext>
+
+	<bean id="aggregatorStrategy" class="ua.np.services.smsinfo.SmsAggregationStrategy" />
+
+
+</beans>
