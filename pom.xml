@@ -4,7 +4,7 @@
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ua.np.services</groupId>
-	<artifactId>transformtest</artifactId>
+	<artifactId>smsinfoesb</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<name>A Camel Spring Route</name>
 	<url>http://www.myorganization.org</url>
