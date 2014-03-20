@@ -6,10 +6,12 @@ cache/
 *.ipr
 *.iws
 .idea/
-.geany
-/target
-*/target
-/reports
-*/reports
+activemq-data/
+*data/
+.geany/
+target*/
+target/
+reports*/
+reports
 .DS_Store
 .wtpmodules

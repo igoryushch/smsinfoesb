@@ -6,8 +6,7 @@
 	<groupId>ua.np.services</groupId>
 	<artifactId>smsinfoesb</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
-	<name>A Camel Spring Route</name>
-	<url>http://www.myorganization.org</url>
+    <packaging>bundle</packaging>
 
 	<parent>
 		<artifactId>npParent</artifactId>
@@ -17,8 +16,6 @@
 
 	<properties>
 		<camel.version>2.12.3</camel.version>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -51,12 +48,18 @@
             <artifactId>activemq-core</artifactId>
             <version>5.7.0</version>
         </dependency>
-		
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-jdbc</artifactId>
-			<version>${spring.version}</version>
-		</dependency>
+
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-sql</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-jaxb</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
 		
 		<!--Database-->
         <dependency>
@@ -89,11 +92,6 @@
 			<artifactId>camel-test</artifactId>
 			<version>${camel.version}</version>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.hibernate.javax.persistence</groupId>
-			<artifactId>hibernate-jpa-2.1-api</artifactId>
 		</dependency>
 
 		<dependency>
@@ -131,6 +129,26 @@
 				<artifactId>camel-maven-plugin</artifactId>
 				<version>${camel.version}</version>
 			</plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>2.4.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-Name>${project.artifactId}</Bundle-Name>
+                        <Bundle-SymbolicName>smsinfo-osgi</Bundle-SymbolicName>
+                        <!--<Export-Package>-->
+                            <!--ua.np.services.smsinfo-->
+                        <!--</Export-Package>-->
+                        <!--<Import-Package>*</Import-Package>-->
+                        <!--<DynamicImport-Package>*</DynamicImport-Package>-->
+                        <!--install file:C:/Users/yushchenko.i/.m2/repository/ua/np/services/smsinfoesb/1.0.0-SNAPSHOT/smsinfoesb-1.0.0-SNAPSHOT.jar-->
+                        <Implementation-Title>Sms Info Service OSGi</Implementation-Title>
+                        <Implementation-Version>${project.version}</Implementation-Version>
+                    </instructions>
+                </configuration>
+            </plugin>
 		</plugins>
 	</build>
 </project>

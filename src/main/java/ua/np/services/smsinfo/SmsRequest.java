@@ -1,10 +1,9 @@
 package ua.np.services.smsinfo;
 
-import javax.persistence.*;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.Calendar;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -20,40 +19,16 @@ import java.util.Date;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-@Entity
-@NamedQueries(
-        {
-                @NamedQuery(name = "findById", query = "SELECT sr FROM SmsRequest sr WHERE sr.smsRequestId = :id"),
-                @NamedQuery(name = "findByIncomingId", query = "SELECT sr FROM SmsRequest sr WHERE sr.incomingId = :incomingId"),
-                @NamedQuery(name = "findBySystemName", query = "SELECT sr FROM SmsRequest sr WHERE sr.systemName = :systemName"),
-                @NamedQuery(name = "findBySystemNameAndDate", query = "SELECT sr FROM SmsRequest sr WHERE sr.systemName = :systemName and (sr.creationDate between :startDate and :endDate)"),
-                @NamedQuery(name = "findByStatus", query = "SELECT sr FROM SmsRequest sr WHERE sr.status = :status"),
-                @NamedQuery(name = "findByOperatorId", query = "SELECT sr FROM SmsRequest sr WHERE sr.operator.operatorId = :operatorId"),
-                @NamedQuery(name = "findByOperatorIdList", query = "SELECT sr FROM SmsRequest sr WHERE sr.operator.operatorId in :operatorIdList"),
-                @NamedQuery(name = "findPendingRequests", query = "SELECT sr FROM SmsRequest sr WHERE sr.status = :statusPending")
-        })
-public class SmsRequest {
+public class SmsRequest implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long smsRequestId;
-
-    @Column(nullable = false)
     private String incomingId;
-    @Column(nullable = false)
     private String systemName;
-    @Column(nullable = false)
     private String phoneNumber;
-    @Column(nullable = false)
     private String messageText;
-    @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private Date creationDate;
-    @Temporal(TemporalType.TIMESTAMP)
     private Date updateDate;
     private String status;
-    @ManyToOne
-    @JoinColumn(name="operatorId")
     private Operator operator;
     private String operatorMessageId;
 

@@ -15,6 +15,11 @@ public class JdbcSmsServiceDaoImpl implements SmsServiceDao {
 
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
+    private JmsQueueSender jmsQueueSender;
+
+    public void setJmsQueueSender( JmsQueueSender jmsQueueSender ) {
+        this.jmsQueueSender = jmsQueueSender;
+    }
 
     public void setDataSource( DataSource dataSource ) {
         this.dataSource = dataSource;
@@ -33,8 +38,14 @@ public class JdbcSmsServiceDaoImpl implements SmsServiceDao {
         // key - incomingId , value - smsRequestId (generated id from database)
         Map<String, Object> idMap = getIdMap( requests, selectQuery );
         setGeneratedIds(requests, idMap);
-
+        sendRequestsToJms(requests);
         return requests;
+    }
+
+    private void sendRequestsToJms( List<SmsRequest> smsRequests ) {
+        for( SmsRequest smsRequest : smsRequests ) {
+            jmsQueueSender.send( smsRequest );
+        }
     }
 
     private void setGeneratedIds( List<SmsRequest> requests, Map<String,Object> idMap ) {

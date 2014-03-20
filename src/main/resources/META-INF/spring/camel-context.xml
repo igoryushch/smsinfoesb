@@ -25,13 +25,19 @@
 	<camelContext id="dest_context" xmlns="http://camel.apache.org/schema/spring">
 		<propertyPlaceholder id="properties"
 			location="classpath:META-INF/dev.smsinfoservice.properties" xmlns="http://camel.apache.org/schema/spring" />
+
+        <dataFormats>
+            <jaxb id="myJaxb" prettyPrint="true" contextPath="ua.np.services.smsinfo"/>
+        </dataFormats>
+
 		<route>
 			<from uri="jetty:http://localhost:9009/smsInfo" />
 			<to uri="direct:SmsEndpoint" />
 		</route>
 
 		<route>
-            <from uri="jms:incomingOrders"/>
+            <from uri="jms:incomingMessages"/>
+            <marshal ref="myJaxb"/>
 			<split>
 				<tokenize token="smsRequest" xml="true"></tokenize>
 				<choice>

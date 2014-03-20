@@ -29,6 +29,7 @@
 
     <bean id="smsServiceDao" class="ua.np.services.smsinfo.JdbcSmsServiceDaoImpl">
         <property name="dataSource" ref="dataSource" />
+        <property name="jmsQueueSender" ref="jmsQueueSender"/>
     </bean>
 
     <bean id="smsInfoService" class="ua.np.services.smsinfo.SmsInfoServiceImpl">
