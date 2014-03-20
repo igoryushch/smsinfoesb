@@ -27,6 +27,15 @@
         </property>
     </bean>
 
+    <bean id="operatorResolver" class="ua.np.services.smsinfo.OperatorResolver">
+        <property name="operatorDao" ref="operatorDao"/>
+        <property name="smsServiceUtils" ref="smsServiceUtils"/>
+    </bean>
+
+    <bean id="operatorDao" class="ua.np.services.smsinfo.JdbcOperatorDaoImpl">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
     <bean id="smsServiceDao" class="ua.np.services.smsinfo.JdbcSmsServiceDaoImpl">
         <property name="dataSource" ref="dataSource" />
         <property name="jmsQueueSender" ref="jmsQueueSender"/>

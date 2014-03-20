@@ -37,6 +37,7 @@
 
 		<route>
             <from uri="jms:incomingMessages"/>
+            <bean ref="operatorResolver" method="setOperator"/>
             <marshal ref="myJaxb"/>
 			<split>
 				<tokenize token="smsRequest" xml="true"></tokenize>

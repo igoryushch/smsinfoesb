@@ -15,7 +15,7 @@ import java.util.Set;
  */
 
 public class Operator {
-    private Long operatorId;
+    private Integer operatorId;
     private String name;
     private Set<String> phoneCodes;
 
@@ -32,11 +32,11 @@ public class Operator {
         this.phoneCodes = new HashSet<>(  );
     }
 
-    public Long getOperatorId() {
+    public Integer getOperatorId() {
         return operatorId;
     }
 
-    public void setOperatorId( Long id ) {
+    public void setOperatorId( Integer id ) {
         this.operatorId = id;
     }
 
