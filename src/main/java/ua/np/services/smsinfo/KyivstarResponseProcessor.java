@@ -7,7 +7,10 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,17 +31,36 @@ public class KyivstarResponseProcessor implements Processor {
         KyivstarAcceptanceResponse resultResponse = parseResponse( exchange.getIn().getBody(InputStream.class) );
         // update operator message id & statuses
         List<KyivstarAcceptanceStatus> statusList = resultResponse.getStatus();
+
+        String requestXml = (String) exchange.getIn().getHeader( "requestMessage" );
+        List<SmsRequest> smsRequestList = getSmsRequestFromXmlString(requestXml);
         for( KyivstarAcceptanceStatus acceptanceStatus : statusList ) {
             System.out.println( acceptanceStatus.getClid() + " status = " + acceptanceStatus.getValue() );
-//            for( SmsRequest smsRequest : smsRequestList ) {
-//                if( smsRequest.getSmsRequestId().equals( Long.valueOf( acceptanceStatus.getClid() ) ) ) {
-//                    smsRequest.setOperator( operator );
-//                    smsRequest.setOperatorMessageId( acceptanceStatus.getMid() );
-//                    smsRequest.setStatus( acceptanceStatus.getValue() );
-//                }
-//            }
+            for( SmsRequest smsRequest : smsRequestList ) {
+                if( smsRequest.getSmsRequestId().equals( Long.valueOf( acceptanceStatus.getClid() ) ) ) {
+                    smsRequest.setOperatorMessageId( acceptanceStatus.getMid() );
+                    smsRequest.setStatus( acceptanceStatus.getValue() );
+                    break;
+                }
+            }
+        }
+        exchange.getOut().setBody( smsRequestList );
+    }
+
+    private List<SmsRequest> getSmsRequestFromXmlString( String requestXml ) {
+
+        JAXBContext jc = null;
+        List<SmsRequest> result = new ArrayList<>(  );
+        try {
+            jc = JAXBContext.newInstance( SmsRequestListWrapper.class );
+            Unmarshaller jaxbUnmarshaller = jc.createUnmarshaller();
+            SmsRequestListWrapper requestListWrapper = (SmsRequestListWrapper) jaxbUnmarshaller.unmarshal( new StreamSource( new StringReader( requestXml ) ) );
+            result = requestListWrapper.getRequestList();
+        } catch( JAXBException e ) {
+            e.printStackTrace();
         }
 
+        return result;
     }
 
     private KyivstarAcceptanceResponse parseResponse( InputStream responseInputStream ) {
@@ -55,5 +77,6 @@ public class KyivstarResponseProcessor implements Processor {
         }
         return null;
     }
+
 
 }

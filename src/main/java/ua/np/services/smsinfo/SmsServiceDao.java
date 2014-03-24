@@ -4,6 +4,6 @@ import java.util.List;
 
 public interface SmsServiceDao {
 
-    public List<SmsRequest> addRequests(final List <SmsRequest> requests);
-    
+    List<SmsRequest> addRequests(final List <SmsRequest> requests);
+    void updateStatuses(List<SmsRequest> requestList);
 }

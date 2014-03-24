@@ -61,6 +61,7 @@
 							<to uri="{{life.newHost}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;authMethod=Basic&amp;authUsername={{life.newHostUser}}&amp;authPassword={{life.newHostPassword}}&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}" />
                             <bean ref="lifeResponseProcessor"/>
                             <log message="[life]    Response ${body}" />
+                            <bean ref="smsUpdateStatusProcessor"/>
 						</aggregate>
 					</when>
 					<otherwise>
@@ -81,6 +82,7 @@
 							<to uri="{{kyivstar.host}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}" />
 							<bean ref="kyivstarResponseProcessor"/>
                             <log message="[kyivstar]    Response ${body}" />
+                            <bean ref="smsUpdateStatusProcessor"/>
 						</aggregate>
 					</otherwise>
 				</choice>
@@ -91,6 +93,8 @@
 	<bean id="aggregatorStrategy" class="ua.np.services.smsinfo.SmsAggregationStrategy" />
     <bean id="kyivstarResponseProcessor" class="ua.np.services.smsinfo.KyivstarResponseProcessor"/>
     <bean id="lifeResponseProcessor" class="ua.np.services.smsinfo.LifeResponseProcessor"/>
-
+    <bean id="smsUpdateStatusProcessor" class="ua.np.services.smsinfo.SmsUpdateStatusProcessor">
+        <property name="smsServiceDao" ref="smsServiceDao"/>
+    </bean>
 
 </beans>

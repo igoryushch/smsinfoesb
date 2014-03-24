@@ -23,12 +23,12 @@ public class JdbcSmsServiceDaoImpl implements SmsServiceDao {
 
     public void setDataSource( DataSource dataSource ) {
         this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate( dataSource );
     }
 
     @Override
     public List<SmsRequest> addRequests( final List<SmsRequest> requests ) {
 
-        jdbcTemplate = new JdbcTemplate( dataSource );
         String insertQuery = "INSERT INTO SmsRequest (incomingId, messageText, phoneNumber, status, systemName, creationDate, updateDate) VALUES (?, ?, ?, ?, ?, ?, ?)";
         String selectQuery = "SELECT smsRequestId, incomingId FROM SmsRequest WHERE incomingId IN (:idList)";
 
@@ -40,6 +40,24 @@ public class JdbcSmsServiceDaoImpl implements SmsServiceDao {
         setGeneratedIds(requests, idMap);
         sendRequestsToJms(requests);
         return requests;
+    }
+
+    @Override
+    public void updateStatuses( final List<SmsRequest> requestList ) {
+        String updateQuery = "UPDATE SmsRequest SET operatorMessageId = ?, status = ?, updateDate = CURRENT_TIMESTAMP WHERE smsRequestId = ?";
+        jdbcTemplate.batchUpdate( updateQuery, new BatchPreparedStatementSetter() {
+
+            public void setValues( PreparedStatement ps, int i ) throws SQLException {
+                SmsRequest request = requestList.get( i );
+                ps.setString( 1, request.getOperatorMessageId() );
+                ps.setString( 2, request.getStatus() );
+                ps.setLong( 3, request.getSmsRequestId() );
+            }
+
+            public int getBatchSize() {
+                return requestList.size();
+            }
+        } );
     }
 
     private void sendRequestsToJms( List<SmsRequest> smsRequests ) {
