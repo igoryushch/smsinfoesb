@@ -40,7 +40,7 @@
             <bean ref="operatorResolver" method="setOperator"/>
             <marshal ref="myJaxb"/>
 			<split>
-				<tokenize token="smsRequest" xml="true"></tokenize>
+				<tokenize token="smsRequest" xml="true"/>
 				<choice>
 					<when>
 						<xpath>/smsRequest/operator/name = 'Life'</xpath>
@@ -52,11 +52,15 @@
 							<setBody>
 								<simple>&lt;smsRequestListWrapper&gt;${body}&lt;/smsRequestListWrapper&gt;</simple>
 							</setBody>
+                            <setHeader headerName="requestMessage">
+                                <simple>${body}</simple>
+                            </setHeader>
 							<to uri="xslt:convertLife.xsl" />
 							<log message="[life]    Processing ${body}" />
 							<setExchangePattern pattern="InOut" />
 							<to uri="{{life.newHost}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;authMethod=Basic&amp;authUsername={{life.newHostUser}}&amp;authPassword={{life.newHostPassword}}&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}" />
-							<log message="[life]    Response ${body}" />
+                            <bean ref="lifeResponseProcessor"/>
+                            <log message="[life]    Response ${body}" />
 						</aggregate>
 					</when>
 					<otherwise>
@@ -68,11 +72,15 @@
 							<setBody>
 								<simple>&lt;smsRequestListWrapper&gt;${body}&lt;/smsRequestListWrapper&gt;</simple>
 							</setBody>
+                            <setHeader headerName="requestMessage">
+                                <simple>${body}</simple>
+                            </setHeader>
 							<to uri="xslt:convertKyivstar.xsl" />
 							<log message="[kyivstar]    Processing ${body}" />
 							<setExchangePattern pattern="InOut" />
 							<to uri="{{kyivstar.host}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}" />
-							<log message="[kyivstar]    Response ${body}" />
+							<bean ref="kyivstarResponseProcessor"/>
+                            <log message="[kyivstar]    Response ${body}" />
 						</aggregate>
 					</otherwise>
 				</choice>
@@ -81,6 +89,8 @@
 	</camelContext>
 
 	<bean id="aggregatorStrategy" class="ua.np.services.smsinfo.SmsAggregationStrategy" />
+    <bean id="kyivstarResponseProcessor" class="ua.np.services.smsinfo.KyivstarResponseProcessor"/>
+    <bean id="lifeResponseProcessor" class="ua.np.services.smsinfo.LifeResponseProcessor"/>
 
 
 </beans>

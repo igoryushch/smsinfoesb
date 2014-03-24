@@ -1,0 +1,1 @@
+CREATE TABLE sms_info.SmsRequest (smsRequestId BIGINT not null IDENTITY(1,1) , creationDate DATETIME NOT NULL, incomingId VARCHAR(255) NOT NULL, messageText VARCHAR(255) NOT NULL, operatorMessageId VARCHAR(255), phoneNumber VARCHAR(255) NOT NULL, status VARCHAR(255), systemName VARCHAR(255) NOT NULL, updateDate DATETIME , operatorId BIGINT, PRIMARY KEY (smsRequestId))

@@ -1,0 +1,1 @@
+CREATE TABLE phoneCodeMapping (operatorId BIGINT NOT NULL, phoneCodes VARCHAR(255))
