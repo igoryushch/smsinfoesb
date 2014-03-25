@@ -20,7 +20,6 @@ import java.util.Map;
  */
 
 public class JdbcOperatorDaoImpl implements OperatorDao {
-    private int i = 0;
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
 
