@@ -15,7 +15,7 @@
 	</parent>
 
 	<properties>
-		<camel.version>2.12.3</camel.version>
+		<camel.version>2.10.0.redhat-60024</camel.version>
 	</properties>
 	<dependencies>
 		<dependency>
