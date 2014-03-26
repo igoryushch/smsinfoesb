@@ -5,90 +5,135 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camel="http://camel.apache.org/schema/spring"
 	xsi:schemaLocation="
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
-       ">
-
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
 
     <import resource="jms-setup.xml"/>
     <import resource="applicationContext.xml"/>
-
+	
+	<!-- camel transport bean: for direct mapping to jaxws endpoint adress with out http host specification. like <to uri="direct:SmsEndpoint"/> -->
 	<bean class="org.apache.camel.component.cxf.transport.CamelTransportFactory"
 		lazy-init="false">
-		<property name="camelContext" ref="dest_context" />
+		<property name="camelContext" ref="smsInfo_context" />
 		<property name="transportIds">
 			<list>
 				<value>http://cxf.apache.org/transports/camel</value>
 			</list>
 		</property>
 	</bean>
-
-	<camelContext id="dest_context" xmlns="http://camel.apache.org/schema/spring">
-		<propertyPlaceholder id="properties"
-			location="classpath:META-INF/dev.smsinfoservice.properties" xmlns="http://camel.apache.org/schema/spring" />
-
-        <dataFormats>
-            <jaxb id="myJaxb" prettyPrint="true" contextPath="ua.np.services.smsinfo"/>
-        </dataFormats>
-
-		<route>
-			<from uri="jetty:http://localhost:9009/smsInfo" />
-			<to uri="direct:SmsEndpoint" />
-		</route>
-
-		<route>
-            <from uri="jms:incomingMessages"/>
-            <bean ref="operatorResolver" method="setOperator"/>
-            <marshal ref="myJaxb"/>
-			<split>
-				<tokenize token="smsRequest" xml="true"/>
-				<choice>
-					<when>
-						<xpath>/smsRequest/operator/name = 'Life'</xpath>
-						<aggregate strategyRef="aggregatorStrategy"
-							completionSize="5" completionTimeout="3000">
-							<correlationExpression>
-								<constant>true</constant>
-							</correlationExpression>
-							<setBody>
-								<simple>&lt;smsRequestListWrapper&gt;${body}&lt;/smsRequestListWrapper&gt;</simple>
-							</setBody>
-                            <setHeader headerName="requestMessage">
-                                <simple>${body}</simple>
-                            </setHeader>
-							<to uri="xslt:convertLife.xsl" />
-							<log message="[life]    Processing ${body}" />
-							<setExchangePattern pattern="InOut" />
-							<to uri="{{life.newHost}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;authMethod=Basic&amp;authUsername={{life.newHostUser}}&amp;authPassword={{life.newHostPassword}}&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}" />
-                            <bean ref="lifeResponseProcessor"/>
-                            <log message="[life]    Response ${body}" />
-                            <bean ref="smsUpdateStatusProcessor"/>
-						</aggregate>
-					</when>
-					<otherwise>
-						<aggregate strategyRef="aggregatorStrategy"
-							completionSize="5" completionTimeout="3000">
-							<correlationExpression>
-								<constant>true</constant>
-							</correlationExpression>
-							<setBody>
-								<simple>&lt;smsRequestListWrapper&gt;${body}&lt;/smsRequestListWrapper&gt;</simple>
-							</setBody>
-                            <setHeader headerName="requestMessage">
-                                <simple>${body}</simple>
-                            </setHeader>
-							<to uri="xslt:convertKyivstar.xsl" />
-							<log message="[kyivstar]    Processing ${body}" />
-							<setExchangePattern pattern="InOut" />
-							<to uri="{{kyivstar.host}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}" />
-							<bean ref="kyivstarResponseProcessor"/>
-                            <log message="[kyivstar]    Response ${body}" />
-                            <bean ref="smsUpdateStatusProcessor"/>
-						</aggregate>
-					</otherwise>
-				</choice>
-			</split>
-		</route>
-	</camelContext>
+	
+	<!-- camel context declaration by name "camel_context" -->
+	<camelContext id="smsInfo_context" xmlns="http://camel.apache.org/schema/spring">
+    
+    <!-- declaration of the properties file. contains url's, datasource, jms, auth, proxy settings-->
+    <propertyPlaceholder location="classpath:META-INF/dev.smsinfoservice.properties" id="properties"/>
+    
+    <!--  pluggable DataFormat to allow messages to be un/marshalled to and from binary or text formats to support a kind of Message Translator -->
+    <dataFormats>
+        <jaxb contextPath="ua.np.services.smsinfo" prettyPrint="true" id="myJaxb"/>
+    </dataFormats>
+    
+    <!-- 
+    	incoming requests are redirected to consumer endpoint
+    	source - jetty http point
+    	dest - jaxws:endpoint
+    -->
+    <route>
+        <from uri="jetty:http://localhost:9009/smsInfo"/>
+        <!-- can be used to connect existing routes in the same camel context synchronously. -->
+        <to uri="direct:SmsEndpoint"/>
+    </route>
+    
+    <!-- main sms service route -->
+    <route>
+    	
+    	<!-- incoming jms event invokes this route -->
+        <from uri="jms:incomingMessages"/>
+        
+        <!-- "ref" - is property of been visibility - DSL bean syntax, used to allow the spring been participate in camel context  
+         requires that this bean must be in the same context, or in a parent context  
+         calls the certain method - setts the operator value to request
+         -->
+        <bean ref="operatorResolver" method="setOperator"/>
+        
+        <!-- injection of the marshaling data format -->
+        <marshal ref="myJaxb"/>
+        
+        <!-- EIP pattern: splitt's the message to a number of pieces and process them individually -->
+        <split>
+            
+            <!-- property token: the xml tag, by which the split will be occured  -->
+            <tokenize token="smsRequest" xml="true"></tokenize>
+            
+            <!-- EIP pattern: Java DSL route builder method. Smells like "case". -->
+            <choice>
+                <when>
+                    
+                    <!-- condition of xpath equality -->
+                    <xpath>/smsRequest/operator/name = 'Life'</xpath>
+                    
+                    <!-- The Aggregator from the EIP patterns allows you to combine a number of messages together into a single message: -->
+                    <aggregate strategyRef="aggregatorStrategy" completionSize="5" completionTimeout="3000">
+                        
+                        <!-- ability to determine what message will be aggregated. true - any message aggregates -->
+                        <correlationExpression>
+                            <constant>true</constant>
+                        </correlationExpression>
+                        
+                        <!-- border the single sms body with <smsRequestListWrapper> </smsRequestListWrapper> tag -->
+                        <setBody>
+                            <simple>&lt;smsRequestListWrapper&gt;${body}&lt;/smsRequestListWrapper&gt;</simple>
+                        </setBody>
+                        
+                        <!-- saves current body into header for future response parsing by certain responseProcessor -->
+                        <setHeader headerName="requestMessage">
+                            <simple>${body}</simple>
+                        </setHeader>
+                        
+                        <!-- applies the xslt transformation that trims the phone numbers by "380"  -->
+                        <to uri="xslt:convertLife.xsl"/>
+                        
+                        <!-- log out the body -->
+                        <log message="[life]    Processing ${body}"/>
+                        
+                        <!-- Allows to retrive the response after request processing-->
+                        <!-- todo: isn't needed remove -->
+                        <setExchangePattern pattern="InOut"/>
+                        
+                        <!-- process the request to certain operator -->
+                        <to uri="{{life.newHost}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;authMethod=Basic&amp;authUsername={{life.newHostUser}}&amp;authPassword={{life.newHostPassword}}&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}"/>
+                        
+                        <!-- takes handling the operator's response -->
+                        <bean ref="lifeResponseProcessor"/>
+                        <log message="[life]    Response ${body}"/>
+                        
+                        <!-- updates the messages states -->
+                        <bean ref="smsUpdateStatusProcessor"/>
+                    </aggregate>
+                </when>
+                <otherwise>
+                    <aggregate strategyRef="aggregatorStrategy" completionSize="5" completionTimeout="3000">
+                        <correlationExpression>
+                            <constant>true</constant>
+                        </correlationExpression>
+                        <setBody>
+                            <simple>&lt;smsRequestListWrapper&gt;${body}&lt;/smsRequestListWrapper&gt;</simple>
+                        </setBody>
+                        <setHeader headerName="requestMessage">
+                            <simple>${body}</simple>
+                        </setHeader>
+                        <to uri="xslt:convertKyivstar.xsl"/>
+                        <log message="[kyivstar]    Processing ${body}"/>
+                        <setExchangePattern pattern="InOut"/>
+                        <to uri="{{kyivstar.host}}?bridgeEndpoint=true&amp;throwExceptionOnFailure=false&amp;proxyHost={{proxy.host}}&amp;proxyPort={{proxy.port}}&amp;proxyAuthMethod=Basic&amp;proxyAuthUsername={{proxy.username}}&amp;proxyAuthPassword={{proxy.password}}"/>
+                        <bean ref="kyivstarResponseProcessor"/>
+                        <log message="[kyivstar]    Response ${body}"/>
+                        <bean ref="smsUpdateStatusProcessor"/>
+                    </aggregate>
+                </otherwise>
+            </choice>
+        </split>
+    </route>
+</camelContext>
 
 	<bean id="aggregatorStrategy" class="ua.np.services.smsinfo.SmsAggregationStrategy" />
     <bean id="kyivstarResponseProcessor" class="ua.np.services.smsinfo.KyivstarResponseProcessor"/>
