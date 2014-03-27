@@ -1,8 +1,5 @@
 package ua.np.services.smsinfo;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.Queue;
-
 import org.springframework.jms.core.JmsTemplate;
 
 import java.util.List;
@@ -29,5 +26,9 @@ public class JmsQueueSender {
 
     public void send(SmsRequest smsRequest) {
         jmsTemplate.convertAndSend(smsRequest);
+    }
+
+    public void send(List<SmsRequest> smsRequestList) {
+        jmsTemplate.convertAndSend(smsRequestList);
     }
 }
