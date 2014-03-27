@@ -61,9 +61,7 @@ public class JdbcSmsServiceDaoImpl implements SmsServiceDao {
     }
 
     private void sendRequestsToJms( List<SmsRequest> smsRequests ) {
-        for( SmsRequest smsRequest : smsRequests ) {
-            jmsQueueSender.send( smsRequest );
-        }
+        jmsQueueSender.send( smsRequests );
     }
 
     private void setGeneratedIds( List<SmsRequest> requests, Map<String,Object> idMap ) {
