@@ -60,10 +60,16 @@ public class OperatorResolver {
         this.smsServiceUtils = smsServiceUtils;
     }
 
-    public SmsRequest setOperator(SmsRequest request){
-        Operator operator = resolveOperator( smsServiceUtils.getPhoneCodeFromNumber( request.getPhoneNumber() ) );
-        request.setOperator( operator );
-        return request;
+    public SmsRequestListWrapper setOperator(List<SmsRequest> requestList){
+        for(SmsRequest request : requestList){
+            Operator operator = resolveOperator( smsServiceUtils.getPhoneCodeFromNumber( request.getPhoneNumber() ) );
+            request.setOperator( operator );
+        }
+
+        SmsRequestListWrapper requestListWrapper = new SmsRequestListWrapper(  );
+        requestListWrapper.setRequestList( requestList );
+
+        return requestListWrapper;
     }
 
 }
